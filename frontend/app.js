@@ -1,31 +1,52 @@
-const API_BASE = "https://loan-portal-qlow.onrender.com"; // set after deploy
+// ====== Config ======
+const API_BASE = "https://loan-portal-qlow.onrender.com"; // your backend URL
 
-// ---- Clock ----
-function updateClock(){document.getElementById("clock").innerText=new Date().toLocaleString();}
-setInterval(updateClock,1000); updateClock();
-
-// ---- Draft Handling ----
-function saveDraft(draft) {
-  let drafts = JSON.parse(localStorage.getItem("drafts") || "[]");
-  drafts.push(draft);
-  localStorage.setItem("drafts", JSON.stringify(drafts));
+// ====== Clock ======
+function updateClock() {
+  document.getElementById("clock").innerText = new Date().toLocaleString();
 }
+setInterval(updateClock, 1000);
+updateClock();
+
+// ====== Modal ======
+function openModal(html) {
+  document.getElementById("modalBody").innerHTML = html;
+  document.getElementById("modal").style.display = "flex";
+}
+function closeModal() {
+  document.getElementById("modal").style.display = "none";
+}
+
+// ====== Draft Handling ======
 function loadDrafts() {
   return JSON.parse(localStorage.getItem("drafts") || "[]");
 }
-function deleteDraft(index) {
+function saveDraft(d) {
   let drafts = loadDrafts();
-  drafts.splice(index,1);
+  drafts.push(d);
   localStorage.setItem("drafts", JSON.stringify(drafts));
 }
+function deleteDraft(i) {
+  let drafts = loadDrafts();
+  drafts.splice(i, 1);
+  localStorage.setItem("drafts", JSON.stringify(drafts));
+}
+function continueDraft(i) {
+  let draft = loadDrafts()[i];
+  localStorage.setItem("activeDraft", JSON.stringify(draft));
+  loadPage("new");
+}
 
-// ---- Page Router ----
-function loadPage(page) {
+// ====== Page Loader ======
+async function loadPage(page) {
+  let content = document.getElementById("content");
+
+  // ---- HOME ----
   if (page === "home") {
     let drafts = loadDrafts();
     let html = "<h3>Home</h3>";
 
-    // Draft Applications
+    // Drafts
     html += "<h4>Draft Applications</h4>";
     if (drafts.length > 0) {
       html += "<div class='card-container'>";
@@ -40,312 +61,160 @@ function loadPage(page) {
         </div>`;
       });
       html += "</div>";
-    } else {
-      html += "<p>No Draft Applications.</p>";
+    } else html += "<p>No Draft Applications.</p>";
+
+    // Latest Apps
+    html += "<h4>Latest Applications</h4><div id='latestApps' class='card-container'>Loading...</div>";
+    content.innerHTML = html;
+
+    try {
+      let res = await fetch(API_BASE + "/applications/?limit=5");
+      let apps = await res.json();
+      let la = apps.map(a=>`
+        <div class="card" onclick="viewDetails('${a.id}')">
+          <h5>${a.loan_type}</h5>
+          <p><strong>ID:</strong> ${a.id}</p>
+        </div>
+      `).join("");
+      document.getElementById("latestApps").innerHTML = la || "<p>No applications yet.</p>";
+    } catch(e) {
+      document.getElementById("latestApps").innerHTML = "<p>Failed to load.</p>";
+    }
+  }
+
+  // ---- NEW APPLICATION ----
+  if (page === "new") {
+    let draft = JSON.parse(localStorage.getItem("activeDraft") || "null");
+    localStorage.removeItem("activeDraft");
+
+    content.innerHTML = `
+      <h3>New Application</h3>
+      <form id="newAppForm">
+        <div id="step1" class="step">
+          <label>Loan Type: 
+            <select name="loan_type" required>
+              <option>Home Loan</option>
+              <option>Personal Loan</option>
+              <option>Loan Against Property</option>
+              <option>Loan Transfer</option>
+              <option>Car Loan</option>
+            </select>
+          </label><br>
+          <label>Application Type: 
+            <select id="appType">
+              <option value="individual">Individual</option>
+              <option value="joint">Joint</option>
+            </select>
+          </label><br>
+          <div id="jointCountContainer" class="hidden">
+            <label>Number of Applicants: <input type="number" id="jointCount" min="2" max="4"></label>
+          </div>
+          <button type="button" class="btn" onclick="nextStep(1)">Next</button>
+        </div>
+        <div id="step2" class="step hidden"></div>
+        <div id="step3" class="step hidden"></div>
+      </form>
+    `;
+
+    if (draft) {
+      document.querySelector("[name=loan_type]").value = draft.loan_type;
     }
 
-    // Latest Applications
-    html += "<h4>Latest Applications</h4><div id='latestApps' class='card-container'>Loading...</div>";
-    document.getElementById("content").innerHTML = html;
-
-    fetch(API_BASE + "/applications?limit=5")
-      .then(r=>r.json())
-      .then(apps=>{
-        let la = apps.map(a=>`
-          <div class="card" onclick="viewDetails('${a.id}')">
-            <h5>${a.loan_type}</h5>
-            <p><strong>ID:</strong> ${a.id}</p>
-          </div>
-        `).join("");
-        document.getElementById("latestApps").innerHTML = la || "<p>No applications yet.</p>";
-      });
+    document.getElementById("appType").onchange = e=>{
+      document.getElementById("jointCountContainer").classList.toggle("hidden", e.target.value!=="joint");
+    };
   }
 
-  if (page === "new") {
-    document.getElementById("content").innerHTML = `
-      <h3>New Application</h3>
-      <div class="step" id="step1">
-        <h4>Step 1: Applicant Details</h4>
-        <form id="appDetailsForm">
-          <label>Loan Type:
-            <select name="loan_type" required>
-              <option value="">Select...</option>
-              <option value="Home Loan">Home Loan</option>
-              <option value="Personal Loan">Personal Loan</option>
-              <option value="Car Loan">Car Loan</option>
-            </select>
-          </label><br>
-          <label>Applicant Name: <input name="name" required></label><br>
-          <label>Email: <input type="email" name="email" required></label><br>
-          <label>Phone: <input type="tel" name="phone" required></label><br>
-          <label>Gender:
-            <select name="gender" required>
-              <option value="">Select...</option>
-              <option>Male</option>
-              <option>Female</option>
-            </select>
-          </label><br>
-          <label>Employment:
-            <select name="employment" required>
-              <option value="">Select...</option>
-              <option value="Salaried">Salaried</option>
-              <option value="Self Employed">Self Employed</option>
-            </select>
-          </label><br>
-          <label>PAN: <input name="pan" required></label><br>
-          <label>Aadhaar: <input name="aadhaar" required></label><br>
-          <button type="submit" class="btn">Next</button>
-          <button type="button" class="btn" onclick="saveDraftFromForm()">Save Draft</button>
-        </form>
-      </div>
-      <div class="step hidden" id="step2">
-        <h4>Step 2: Upload Documents</h4>
-        <form id="docUploadForm" enctype="multipart/form-data">
-          <label>Upload PAN + Aadhaar + Supporting Docs:</label><br>
-          <input type="file" name="files" multiple required><br>
-          <button type="submit" class="btn">Next</button>
-        </form>
-      </div>
-      <div class="step hidden" id="step3">
-        <h4>Step 3: Preview & Submit</h4>
-        <div id="previewBox"></div>
-        <button onclick="submitApplication()" class="btn">Submit</button>
-      </div>
-    `;
-    handleNewApplicationForm();
-  }
-
+  // ---- VIEW APPLICATIONS ----
   if (page === "view") {
-    fetch(API_BASE + "/applications/")
-      .then(r=>r.json())
-      .then(apps=>{
-        let html = "<h3>Applications</h3><table><tr><th>ID</th><th>Loan Type</th><th>Action</th></tr>";
-        apps.forEach(a=>{
-          html += `<tr><td>${a.id}</td><td>${a.loan_type}</td>
-          <td><button onclick="viewDetails('${a.id}')">View</button></td></tr>`;
-        });
-        html += "</table>";
-        document.getElementById("content").innerHTML = html;
-      });
-  }
-
-  if (page === "edit") {
-    document.getElementById("content").innerHTML = `
-      <h3>Edit Application</h3>
-      <form id="searchAppForm">
-        <label>Enter Application ID: <input name="appId" required></label>
+    content.innerHTML = `
+      <h3>View Applications</h3>
+      <form id="searchForm">
+        <label>Search by Applicant Name: <input name="q"></label>
         <button type="submit" class="btn">Search</button>
       </form>
-      <div id="editFormBox"></div>
+      <div id="results"></div>
     `;
-    document.getElementById("searchAppForm").onsubmit = async (e) => {
+
+    document.getElementById("searchForm").onsubmit = async e=>{
       e.preventDefault();
-      const appId = e.target.appId.value.trim();
-      let res = await fetch(API_BASE + "/applications/" + appId);
-      if (!res.ok) { alert("Application not found"); return; }
+      let q = e.target.q.value;
+      let res = await fetch(API_BASE + "/applications/?q="+q);
+      let apps = await res.json();
+      let html = "<table><tr><th>ID</th><th>Loan Type</th><th>Action</th></tr>";
+      apps.forEach(a=>{
+        html += `<tr><td>${a.id}</td><td>${a.loan_type}</td>
+          <td><button class="btn" onclick="viewDetails('${a.id}')">View</button></td></tr>`;
+      });
+      html += "</table>";
+      document.getElementById("results").innerHTML = html;
+    };
+  }
+
+  // ---- EDIT APPLICATION ----
+  if (page === "edit") {
+    content.innerHTML = `
+      <h3>Edit Application</h3>
+      <form id="editSearchForm">
+        <label>Application ID: <input name="appId" required></label>
+        <button class="btn">Load</button>
+      </form>
+      <div id="editFormContainer"></div>
+    `;
+
+    document.getElementById("editSearchForm").onsubmit = async e=>{
+      e.preventDefault();
+      let id = e.target.appId.value;
+      let res = await fetch(API_BASE + "/applications/"+id);
+      if (!res.ok) return alert("Not found");
       let app = await res.json();
-      let a = app.applicants[0];
-      document.getElementById("editFormBox").innerHTML = `
-        <form id="editAppForm">
-          <input type="hidden" name="appId" value="${appId}">
+      document.getElementById("editFormContainer").innerHTML = `
+        <form id="editForm">
           <label>Loan Type: <input name="loan_type" value="${app.loan_type}"></label><br>
-          <label>Name: <input name="name" value="${a.name}" required></label><br>
-          <label>Email: <input type="email" name="email" value="${a.email}" required></label><br>
-          <label>Phone: <input type="tel" name="phone" value="${a.phone}" required></label><br>
-          <label>Gender:
-            <select name="gender" required>
-              <option ${a.gender==="Male"?"selected":""}>Male</option>
-              <option ${a.gender==="Female"?"selected":""}>Female</option>
-            </select>
-          </label><br>
-          <label>Employment:
-            <select name="employment" required>
-              <option ${a.employment==="Salaried"?"selected":""}>Salaried</option>
-              <option ${a.employment==="Self Employed"?"selected":""}>Self Employed</option>
-            </select>
-          </label><br>
-          <label>PAN: <input name="pan" value="${a.pan}" required></label><br>
-          <label>Aadhaar: <input name="aadhaar" value="${a.aadhaar}" required></label><br>
-          <h4>Upload New Documents (optional)</h4>
-          <input type="file" name="files" multiple><br>
-          <button type="submit" class="btn">Update</button>
+          <button class="btn">Save</button>
         </form>
       `;
-      document.getElementById("editAppForm").onsubmit = async (ev) => {
+      document.getElementById("editForm").onsubmit = async ev=>{
         ev.preventDefault();
-        const f = new FormData(ev.target);
-        const appId = f.get("appId");
-        const payload = {
-          loan_type: f.get("loan_type"),
-          applicants: [{
-            name: f.get("name"),
-            email: f.get("email"),
-            phone: f.get("phone"),
-            gender: f.get("gender"),
-            employment: f.get("employment"),
-            pan: f.get("pan"),
-            aadhaar: f.get("aadhaar")
-          }]
-        };
-        await fetch(API_BASE + "/applications/" + appId, {
-          method: "PUT",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify(payload)
+        let data = {loan_type: ev.target.loan_type.value};
+        let res2 = await fetch(API_BASE+"/applications/"+id, {
+          method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)
         });
-        if (f.getAll("files")[0].size > 0) {
-          const fd = new FormData();
-          fd.append("doc_type","update");
-          fd.append("applicant_index",0);
-          for (let file of f.getAll("files")) fd.append("files", file);
-          await fetch(API_BASE + `/applications/${appId}/documents`, { method: "POST", body: fd });
-        }
-        alert("Application updated successfully!");
-        loadPage("view");
+        if (res2.ok) alert("Updated!"); else alert("Failed");
       };
     };
   }
 
+  // ---- DELETE APPLICATION ----
   if (page === "delete") {
-    document.getElementById("content").innerHTML = `
+    content.innerHTML = `
       <h3>Delete Application</h3>
       <form id="deleteAppForm">
-        <label>Enter Application ID: <input name="appId" required></label>
-        <button type="submit" class="btn">Delete</button>
+        <label>Application ID: <input name="appId" required></label>
+        <button class="btn">Delete</button>
       </form>
     `;
-    document.getElementById("deleteAppForm").onsubmit = async (e) => {
+    document.getElementById("deleteAppForm").onsubmit = async e=>{
       e.preventDefault();
-      const appId = e.target.appId.value.trim();
-      if (!confirm("Delete Application " + appId + "?")) return;
-      let res = await fetch(API_BASE + "/applications/" + appId, { method: "DELETE" });
-      if (res.ok) { alert("Application deleted"); loadPage("view"); }
-      else alert("Failed to delete");
+      let id = e.target.appId.value;
+      if (!confirm("Delete "+id+"?")) return;
+      let res = await fetch(API_BASE+"/applications/"+id,{method:"DELETE"});
+      if (res.ok) { alert("Deleted"); loadPage("view"); }
+      else alert("Failed");
     };
   }
 }
 
-// ---- New Application State ----
-let newAppData = {};
-
-function handleNewApplicationForm() {
-  document.getElementById("appDetailsForm").onsubmit = (e) => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    newAppData = {
-      loan_type: f.get("loan_type"),
-      applicants: [{
-        name: f.get("name"),
-        email: f.get("email"),
-        phone: f.get("phone"),
-        gender: f.get("gender"),
-        employment: f.get("employment"),
-        pan: f.get("pan"),
-        aadhaar: f.get("aadhaar")
-      }]
-    };
-    document.getElementById("step1").classList.add("hidden");
-    document.getElementById("step2").classList.remove("hidden");
-  };
-
-  document.getElementById("docUploadForm").onsubmit = (e) => {
-    e.preventDefault();
-    const files = e.target.files.files;
-    newAppData.files = files;
-    document.getElementById("step2").classList.add("hidden");
-    document.getElementById("step3").classList.remove("hidden");
-    document.getElementById("previewBox").innerHTML = `
-      <pre>${JSON.stringify(newAppData,null,2)}</pre>
-      <p>Files: ${Array.from(files).map(f=>f.name).join(", ")}</p>
-    `;
-  };
+// ====== Helpers ======
+async function viewDetails(id) {
+  let res = await fetch(API_BASE+"/applications/"+id);
+  if (!res.ok) return alert("Not found");
+  let app = await res.json();
+  let html = `<h3>Application ${id}</h3>
+    <p><strong>Loan Type:</strong> ${app.loan_type}</p>
+    <pre>${JSON.stringify(app,null,2)}</pre>`;
+  openModal(html);
 }
 
-function saveDraftFromForm() {
-  const f = new FormData(document.getElementById("appDetailsForm"));
-  const draft = {
-    loan_type: f.get("loan_type"),
-    applicants: [{
-      name: f.get("name"),
-      email: f.get("email"),
-      phone: f.get("phone"),
-      gender: f.get("gender"),
-      employment: f.get("employment"),
-      pan: f.get("pan"),
-      aadhaar: f.get("aadhaar")
-    }]
-  };
-  saveDraft(draft);
-  alert("Draft saved!");
-}
-
-function continueDraft(index) {
-  let drafts = loadDrafts();
-  newAppData = drafts[index];
-  deleteDraft(index);
-  loadPage("new");
-  // Pre-fill form after short delay
-  setTimeout(()=>{
-    const f = document.getElementById("appDetailsForm");
-    f.loan_type.value = newAppData.loan_type;
-    f.name.value = newAppData.applicants[0].name;
-    f.email.value = newAppData.applicants[0].email;
-    f.phone.value = newAppData.applicants[0].phone;
-    f.gender.value = newAppData.applicants[0].gender;
-    f.employment.value = newAppData.applicants[0].employment;
-    f.pan.value = newAppData.applicants[0].pan;
-    f.aadhaar.value = newAppData.applicants[0].aadhaar;
-  },100);
-}
-
-async function submitApplication() {
-  let res = await fetch(API_BASE + "/applications/", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      loan_type: newAppData.loan_type,
-      applicants: newAppData.applicants
-    })
-  });
-  let data = await res.json();
-  const appId = data.id;
-
-  const fd = new FormData();
-  fd.append("doc_type","general");
-  fd.append("applicant_index",0);
-  for (let f of newAppData.files) fd.append("files", f);
-
-  await fetch(API_BASE + `/applications/${appId}/documents`, { method:"POST", body:fd });
-
-  alert("Application submitted! ID: " + appId);
-  loadPage("view");
-}
-
-// ---- Modal ----
-function viewDetails(id) {
-  fetch(API_BASE + "/applications/" + id)
-    .then(r=>r.json())
-    .then(data=>{
-      document.getElementById("modalBody").innerHTML =
-        `<h3>Application ${id}</h3><pre>${JSON.stringify(data,null,2)}</pre>
-         <button onclick="viewReport('${id}')">View Report</button>`;
-      document.getElementById("modal").style.display = "flex";
-    });
-}
-function viewReport(id) {
-  fetch(API_BASE + `/applications/${id}/report`)
-    .then(r=>r.json())
-    .then(rep=>{
-      document.getElementById("modalBody").innerHTML +=
-        `<h4>Report</h4><pre>${rep.report_text}</pre>
-         <a href="${rep.report_pdf_url}" target="_blank">Download PDF</a>`;
-    });
-}
-function closeModal(){document.getElementById("modal").style.display="none";}
-
-// ---- Default Page ----
-window.onload = () => { loadPage("home"); };
-
-
-
-
-
+// ====== Init ======
+window.onload = ()=> loadPage("home");
