@@ -335,3 +335,12 @@ async function viewDetails(id) {
 
 // ====== Init ======
 window.onload = ()=> loadPage("home");
+// Sidebar toggle
+document.addEventListener("DOMContentLoaded", ()=>{
+  const sidebar = document.getElementById("sidebar");
+  document.getElementById("menuToggle").onclick = ()=>{
+    sidebar.classList.toggle("expanded");
+    sidebar.classList.toggle("collapsed");
+  };
+});
+
