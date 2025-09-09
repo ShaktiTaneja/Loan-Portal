@@ -25,26 +25,38 @@ function loadPage(page) {
     let drafts = loadDrafts();
     let html = "<h3>Home</h3>";
 
+    // Draft Applications
+    html += "<h4>Draft Applications</h4>";
     if (drafts.length > 0) {
-      html += "<h4>Draft Applications</h4>";
+      html += "<div class='card-container'>";
       drafts.forEach((d,i)=>{
-        html += `<div class="draft-card">
-          <strong>${d.loan_type}</strong> - ${d.applicants[0].name}
-          <button onclick="continueDraft(${i})">Continue</button>
-          <button onclick="deleteDraft(${i}); loadPage('home')">Delete</button>
+        html += `<div class="card">
+          <h5>${d.loan_type}</h5>
+          <p><strong>Applicant:</strong> ${d.applicants[0].name}</p>
+          <div class="card-actions">
+            <button class="btn" onclick="continueDraft(${i})">Continue</button>
+            <button class="btn" onclick="deleteDraft(${i}); loadPage('home')">Delete</button>
+          </div>
         </div>`;
       });
+      html += "</div>";
     } else {
       html += "<p>No Draft Applications.</p>";
     }
 
-    html += "<h4>Latest Applications</h4><div id='latestApps'>Loading...</div>";
+    // Latest Applications
+    html += "<h4>Latest Applications</h4><div id='latestApps' class='card-container'>Loading...</div>";
     document.getElementById("content").innerHTML = html;
 
     fetch(API_BASE + "/applications?limit=5")
       .then(r=>r.json())
       .then(apps=>{
-        let la = apps.map(a=>`<div class="draft-card">${a.loan_type} - ${a.id}</div>`).join("");
+        let la = apps.map(a=>`
+          <div class="card" onclick="viewDetails('${a.id}')">
+            <h5>${a.loan_type}</h5>
+            <p><strong>ID:</strong> ${a.id}</p>
+          </div>
+        `).join("");
         document.getElementById("latestApps").innerHTML = la || "<p>No applications yet.</p>";
       });
   }
@@ -330,9 +342,9 @@ function viewReport(id) {
 }
 function closeModal(){document.getElementById("modal").style.display="none";}
 
-// ---- Initialize default page ----
-window.onload = () => {
-  loadPage("home");
-};
+// ---- Default Page ----
+window.onload = () => { loadPage("home"); };
+
+
 
 
