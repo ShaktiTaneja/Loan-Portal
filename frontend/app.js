@@ -48,7 +48,7 @@ function loadPage(page) {
     html += "<h4>Latest Applications</h4><div id='latestApps' class='card-container'>Loading...</div>";
     document.getElementById("content").innerHTML = html;
 
-    fetch(API_BASE + "/applications?limit=5")
+    fetch(API_BASE + "/applications?limit=5/")
       .then(r=>r.json())
       .then(apps=>{
         let la = apps.map(a=>`
@@ -116,7 +116,7 @@ function loadPage(page) {
   }
 
   if (page === "view") {
-    fetch(API_BASE + "/applications")
+    fetch(API_BASE + "/applications/")
       .then(r=>r.json())
       .then(apps=>{
         let html = "<h3>Applications</h3><table><tr><th>ID</th><th>Loan Type</th><th>Action</th></tr>";
@@ -344,6 +344,7 @@ function closeModal(){document.getElementById("modal").style.display="none";}
 
 // ---- Default Page ----
 window.onload = () => { loadPage("home"); };
+
 
 
 
