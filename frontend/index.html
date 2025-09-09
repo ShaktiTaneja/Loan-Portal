@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Loan Portal</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <header>
+    <div id="clock"></div>
+    <div><strong>Loan Portal</strong></div>
+  </header>
+
+  <div id="sidebar">
+    <h2>Menu</h2>
+    <a href="#" onclick="loadPage('home')">🏠 Home</a>
+    <a href="#" onclick="loadPage('new')">📝 New Application</a>
+    <a href="#" onclick="loadPage('view')">📑 View Applications</a>
+    <a href="#" onclick="loadPage('edit')">✏️ Edit Application</a>
+    <a href="#" onclick="loadPage('delete')">🗑 Delete Application</a>
+  </div>
+
+  <main id="content">Welcome to Loan Portal</main>
+
+  <!-- Report Modal -->
+  <div id="reportModal" class="modal">
+    <div class="modal-content">
+      <h3>Application Report</h3>
+      <pre id="reportText"></pre>
+      <button onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
