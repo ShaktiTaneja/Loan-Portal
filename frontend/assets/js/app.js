@@ -1,4 +1,4 @@
-const API_BASE = "https://your-backend.onrender.com"; // set after deploy
+const API_BASE = "https://loan-portal-qlow.onrender.com"; // set after deploy
 
 // Clock
 function updateClock() {
@@ -169,3 +169,4 @@ function renderDeleteApplication() {
 
 // Start
 loadPage("home");
+
