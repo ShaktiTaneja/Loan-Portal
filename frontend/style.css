@@ -17,7 +17,7 @@ header .left {
   position:absolute; left:10px; display:flex; align-items:center; gap:10px;
 }
 .menu-icon { cursor:pointer; font-size:20px; }
-
+#clock { position:absolute; right:10px; top:8px; }
 /* Sidebar */
 #sidebar {
   background:#333; color:white; height:100vh;
@@ -74,3 +74,4 @@ th { background:#f0f0f0; }
 /* Steps */
 .step { margin-bottom:20px; }
 .hidden { display:none; }
+
