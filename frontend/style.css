@@ -5,26 +5,37 @@
 
 /* Layout */
 body { margin:0; font-family: Arial, sans-serif; }
+
+/* Header */
 header {
-  background:#222; color:#fff; padding:12px;
-  text-align:center; position:relative;
+  background:#222; color:#fff; height:50px;
+  display:flex; align-items:center; justify-content:center;
+  position:fixed; top:0; left:0; width:100%; z-index:1000;
 }
-header h1 { margin:0; font-size:22px; }
-#clock { position:absolute; right:10px; top:12px; font-size:14px; }
+header h1 { margin:0; font-size:20px; font-weight:bold; }
+header .left {
+  position:absolute; left:10px; display:flex; align-items:center; gap:10px;
+}
+.menu-icon { cursor:pointer; font-size:20px; }
 
 /* Sidebar */
 #sidebar {
-  width:220px; background:#333; color:white; height:100vh;
-  position:fixed; top:0; left:0; padding-top:60px;
+  background:#333; color:white; height:100vh;
+  position:fixed; top:50px; left:0; transition:width 0.3s;
+  overflow:hidden; padding-top:10px;
 }
-#sidebar h2 { text-align:center; margin:0 0 10px; }
+#sidebar.expanded { width:220px; }
+#sidebar.collapsed { width:60px; }
+#sidebar h2 { text-align:center; margin:0 0 10px; font-size:16px; }
 #sidebar a {
   display:block; padding:10px; text-decoration:none; color:white;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 #sidebar a:hover { background:#444; }
 
 /* Content */
-main { margin-left:220px; padding:20px; }
+main { margin-top:60px; margin-left:220px; padding:20px; transition:margin-left 0.3s; }
+#sidebar.collapsed ~ main { margin-left:60px; }
 
 /* Cards */
 .card-container { display:flex; flex-wrap:wrap; gap:12px; }
