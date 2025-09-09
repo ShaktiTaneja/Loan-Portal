@@ -6,20 +6,26 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Header -->
   <header>
-    <div id="clock"></div>
-    <strong>Loan Portal</strong>
+    <div class="left">
+      <span id="menuToggle" class="menu-icon">☰</span>
+      <span id="clock"></span>
+    </div>
+    <h1>Loan Portal</h1>
   </header>
 
-  <div id="sidebar">
+  <!-- Sidebar -->
+  <nav id="sidebar" class="expanded">
     <h2>Menu</h2>
     <a href="#" onclick="loadPage('home')">🏠 Home</a>
     <a href="#" onclick="loadPage('new')">📝 New Application</a>
     <a href="#" onclick="loadPage('view')">📑 View Applications</a>
     <a href="#" onclick="loadPage('edit')">✏️ Edit Application</a>
     <a href="#" onclick="loadPage('delete')">🗑 Delete Application</a>
-  </div>
+  </nav>
 
+  <!-- Content -->
   <main id="content">Welcome to Loan Portal</main>
 
   <!-- Modal -->
@@ -33,4 +39,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
